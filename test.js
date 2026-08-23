@@ -1,19 +1,76 @@
-import base16 from './index.js'
-import test from 'tape'
+import base16 from "./index.js";
+import test from "node:test";
+import assert from "node:assert";
+import { log } from "node:console";
 
-const uint8Array = new TextEncoder().encode('hi')
+const uint8Array = new TextEncoder().encode("hi");
 
-test('base16', tape => {
-  tape.plan(3)
+test("base16", () => {
+  const base16Encoded = base16.encode(uint8Array);
+  assert.strictEqual(base16Encoded.length, 4, "can encode");
 
-  const base16Encoded = base16.encode(uint8Array)
-  tape.ok(base16Encoded.length === 4, 'can encode')
-  
-  tape.ok(base16.isBase16(base16Encoded), 'is base16String')
+  assert.ok(base16.isBase16(base16Encoded), "is base16String");
 
-  const base16Decoded = base16.decode(base16Encoded)
-  
-  const string = new TextDecoder().decode(base16Decoded)
+  const base16Decoded = base16.decode(base16Encoded);
 
-  tape.ok(string === 'hi', 'can decode')
-})
+  const string = new TextDecoder().decode(base16Decoded);
+
+  assert.strictEqual(string, "hi", "can decode");
+});
+
+test("RFC 4648 test vectors", () => {
+  const vectors = [
+    ["", ""],
+    ["f", "66"],
+    ["fo", "666F"],
+    ["foo", "666F6F"],
+    ["foob", "666F6F62"],
+    ["fooba", "666F6F6261"],
+    ["foobar", "666F6F626172"],
+  ];
+
+  for (const [input, expected] of vectors) {
+    const encoded = base16.encode(new TextEncoder().encode(input));
+    assert.strictEqual(encoded, expected, `encodes ${input}`);
+
+    // Test helper to decode string from base16
+    const decoded = new TextDecoder().decode(base16.decode(expected));
+    assert.strictEqual(decoded, input, `decodes ${expected}`);
+  }
+});
+
+test("isBase16 validation", () => {
+  assert.ok(base16.isBase16("0123456789ABCDEF"), "valid alphabet");
+  assert.strictEqual(base16.isBase16("G"), false, "invalid character G");
+  assert.strictEqual(base16.isBase16("NotHex"), false, "invalid string NotHex");
+});
+
+test("Cross-check with Node.js Buffer", () => {
+  for (let i = 0; i < 1000; i++) {
+    const length = Math.floor(Math.random() * 100);
+    const data = new Uint8Array(length);
+    for (let j = 0; j < length; j++) data[j] = Math.floor(Math.random() * 256);
+
+    // Node.js Buffer (Gold Standard)
+    const expectedHex = Buffer.from(data).toString("hex").toUpperCase();
+
+    // Our implementation
+    const actualHex = base16.encode(data);
+
+    assert.strictEqual(
+      actualHex,
+      expectedHex,
+      `Encoding mismatch at iter ${i}`,
+    );
+
+    const decoded = base16.decode(actualHex);
+    const expectedBuffer = Buffer.from(data);
+    const actualBuffer = Buffer.from(decoded);
+
+    assert.deepStrictEqual(
+      actualBuffer,
+      expectedBuffer,
+      `Decoding mismatch at iter ${i}`,
+    );
+  }
+});
