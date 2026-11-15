@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
+    "target": "esnext",
     "moduleResolution":"NodeNext",
     "module": "nodenext",
     "outDir": "./",
+    "rootDir": "./src",
     "allowJs": true,
-    "target": "es2022",
-    "declaration": true
+    "declaration": true,
+    "types": ["node"]
   },
+  
   "include": [
     "./src/**/*"
   ],

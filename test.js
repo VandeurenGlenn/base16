@@ -43,6 +43,16 @@ test("isBase16 validation", () => {
   assert.ok(base16.isBase16("0123456789ABCDEF"), "valid alphabet");
   assert.strictEqual(base16.isBase16("G"), false, "invalid character G");
   assert.strictEqual(base16.isBase16("NotHex"), false, "invalid string NotHex");
+  assert.strictEqual(base16.isBase16("Ā0"), false, "invalid non-ASCII character");
+  assert.strictEqual(base16.isBase16("AAA\n"), false, "invalid line break");
+});
+
+test("encoding and decoding respect Uint8Array views", () => {
+  const data = new Uint8Array([0xff, 0x00, 0x42, 0x10]);
+  const view = data.subarray(1, 3);
+
+  assert.strictEqual(base16.encode(view), "0042");
+  assert.deepStrictEqual(base16.decode("0042"), new Uint8Array([0x00, 0x42]));
 });
 
 test("Cross-check with Node.js Buffer", () => {
